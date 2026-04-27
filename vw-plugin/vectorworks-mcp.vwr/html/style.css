@@ -1,0 +1,134 @@
+/* MCP Bridge palette — minimal dark theme matching VW's palette aesthetic. */
+
+:root {
+  --bg:        #1f2123;
+  --bg-2:      #2a2c2f;
+  --fg:        #e6e7e9;
+  --muted:     #8b8f95;
+  --line:      #3a3d41;
+  --accent:    #6b8af0;
+  --accent-fg: #ffffff;
+  --ok:        #54c876;
+  --off:       #6e7174;
+  --warn:      #d6a04a;
+  --danger:    #d65c5c;
+  --radius:    6px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.4 -apple-system, "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+#root {
+  display: flex; flex-direction: column;
+  height: 100vh;
+  padding: 12px 14px;
+  gap: 10px;
+}
+
+/* Header */
+.hdr {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.title-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--off);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.25);
+  transition: background 0.18s;
+}
+.dot.on { background: var(--ok); }
+.dot.warn { background: var(--warn); }
+.dot.err { background: var(--danger); }
+.title {
+  font-weight: 600; font-size: 14px; letter-spacing: 0.2px;
+}
+.endpoint {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 11px; color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Status rows */
+.status-block {
+  background: var(--bg-2);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.status-line {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px;
+}
+.status-line .label { color: var(--muted); }
+.status-line .value { color: var(--fg); font-weight: 500; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+
+/* Controls */
+.controls { display: flex; gap: 8px; }
+button.primary {
+  flex: 1;
+  height: 34px;
+  border: 1px solid var(--line);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-radius: var(--radius);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+button.primary:hover:not(:disabled) { filter: brightness(1.1); }
+button.primary:disabled {
+  opacity: 0.5; cursor: not-allowed;
+  background: var(--off);
+}
+button.primary.stop {
+  background: var(--danger);
+}
+button.primary.stop:hover:not(:disabled) { filter: brightness(1.1); }
+
+/* Settings */
+.settings {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.checkbox-row {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox-row input[type="checkbox"] {
+  appearance: none;
+  width: 14px; height: 14px;
+  border: 1px solid var(--line); border-radius: 3px;
+  background: var(--bg-2);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.checkbox-row input[type="checkbox"]:checked {
+  background: var(--accent); border-color: var(--accent);
+}
+.checkbox-row input[type="checkbox"]:checked::after {
+  content: ""; width: 8px; height: 4px;
+  border: 2px solid #fff; border-top: 0; border-right: 0;
+  transform: rotate(-45deg) translate(0, -1px);
+}
+.checkbox-row input[type="checkbox"]:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
+.checkbox-row span { color: var(--fg); font-size: 12px; }
+.hint {
+  color: var(--muted);
+  font-size: 10px;
+  font-family: ui-monospace, Consolas, monospace;
+  word-break: break-all;
+}

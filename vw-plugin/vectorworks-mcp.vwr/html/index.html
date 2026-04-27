@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=360, initial-scale=1">
+  <title>MCP Bridge</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main id="root">
+    <header class="hdr">
+      <div class="title-row">
+        <span class="dot" id="dot"></span>
+        <span class="title" id="title">MCP Bridge</span>
+      </div>
+      <div class="endpoint" id="endpoint">—</div>
+    </header>
+
+    <section class="status-block">
+      <div class="status-line">
+        <span class="label">Status</span>
+        <span class="value" id="status-text">Initializing…</span>
+      </div>
+      <div class="status-line">
+        <span class="label">VW</span>
+        <span class="value" id="vw-version">—</span>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button id="toggle-btn" class="primary" disabled>—</button>
+    </section>
+
+    <section class="settings">
+      <label class="checkbox-row">
+        <input type="checkbox" id="autostart-cb" disabled>
+        <span>Start bridge on Vectorworks launch</span>
+      </label>
+      <div class="hint" id="settings-path">—</div>
+    </section>
+  </main>
+
+  <script src="./main.js"></script>
+</body>
+</html>
