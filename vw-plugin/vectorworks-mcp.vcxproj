@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    vectorworks-mcp plugin — built against VW2025 SDK by default.
+    To build against VW2026, set the VWSDKRoot property on the MSBuild command line:
+        msbuild.exe vectorworks-mcp.vcxproj /p:Configuration=Release /p:Platform=x64 /p:VWSDKRoot="D:\CODE\TH_VWX\VWX_SDK\2026-NNA-eng-win-SDK\SDK\SDKVW(832364)"
+  -->
+
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{F1B04A4D-FEE6-40CA-B876-1CE52C5D85C7}</ProjectGuid>
+    <RootNamespace>vectorworksmcp</RootNamespace>
+    <ProjectName>vectorworks-mcp</ProjectName>
+    <!-- Win10 1803 (April 2018) is the minimum for AF_UNIX support; this
+         machine has 10.0.26100.0 installed which is fine. -->
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <!-- VW SDK location, override with /p:VWSDKRoot=... on the command line -->
+    <VWSDKRoot Condition="'$(VWSDKRoot)' == ''">D:\CODE\TH_VWX\VWX_SDK\2025-NNA-eng-win-SDK\SDK\SDKVW(784374)</VWSDKRoot>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup>
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\$(Configuration)\obj\</IntDir>
+    <TargetName>vectorworks-mcp</TargetName>
+    <TargetExt>.vlb</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)'=='Debug'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)'=='Release'">false</LinkIncremental>
+  </PropertyGroup>
+
+  <!-- =================== DEBUG =================== -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(VWSDKRoot)\SDKLib\Include;$(VWSDKRoot)\SDKLib\Include\json;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;_USRDLL;_WIN_EXTERNAL_;DEV_BLD;_WINDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>VWSDK.lib;VWMM.lib;GSWinSDK.lib;USP10.lib;Rpcrt4.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VWSDKRoot)\SDKLib\LibWin\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- =================== RELEASE =================== -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>$(VWSDKRoot)\SDKLib\Include;$(VWSDKRoot)\SDKLib\Include\json;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;_USRDLL;_WIN_EXTERNAL_;RELEASE_BLD;_WINDLL;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>VWSDK.lib;VWMM.lib;GSWinSDK.lib;USP10.lib;Rpcrt4.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VWSDKRoot)\SDKLib\LibWin\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClCompile Include="src\ModuleMain.cpp" />
+    <ClCompile Include="src\ExtMcpBridge.cpp" />
+    <ClCompile Include="src\ExtMcpPalette.cpp" />
+    <ClCompile Include="src\BridgeCore.cpp" />
+    <ClCompile Include="src\SocketBridge.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="src\StdAfx.h" />
+    <ClInclude Include="src\ExtMcpBridge.h" />
+    <ClInclude Include="src\ExtMcpPalette.h" />
+    <ClInclude Include="src\BridgeCore.h" />
+    <ClInclude Include="src\SocketBridge.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="vectorworks-mcp.vwr\Strings\Default.vwstrings" />
+    <None Include="vectorworks-mcp.vwr\html\index.html" />
+    <None Include="vectorworks-mcp.vwr\html\main.js" />
+    <None Include="vectorworks-mcp.vwr\html\style.css" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

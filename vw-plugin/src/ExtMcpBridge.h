@@ -6,19 +6,18 @@ namespace Extensions
 {
     using namespace VWFC::PluginSupport;
 
-    // Menu Extension — MCP Bridge の開始/停止
+    // Menu Extension — MCP Bridge start/stop
     class CMcpBridge : public VWExtensionMenu
     {
-        DEFINE_VWMenuExtensionClass;
+        DEFINE_VWMenuExtension;
     public:
         CMcpBridge(CallBackPtr cbp);
         virtual ~CMcpBridge();
     };
 
-    // Event Sink — メニューコマンド実行時のハンドラ
+    // Event Sink — handler invoked when the menu command fires
     class CMcpBridge_EventSink : public VWMenu_EventSink
     {
-        DEFINE_VWMenuEventSinkClass;
     public:
         CMcpBridge_EventSink(IVWUnknown* parent);
         virtual ~CMcpBridge_EventSink();
