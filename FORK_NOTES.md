@@ -1,8 +1,39 @@
-# vectorworks-mcp — Fork Notes (last updated 2026-04-26)
+# vectorworks-mcp — Fork Notes (last updated 2026-04-29)
 
 **Upstream:** `https://github.com/mako-357/vectorworks-mcp` (1 star, first public release 2026-04-24)
 **Local clone:** `D:\CODE\vectorworks-mcp\`
 **Status: ✅ FULLY OPERABLE — all smoke tests green on VW2026, 2026-04-26.**
+
+## 2026-04-29 — Renamed to Fuse VW Gantry
+
+The plugin has a name now. Same identity (UUIDs preserved, source unchanged in substance), just renamed across every surface VW or the user sees:
+
+| Surface | Was | Now |
+|---|---|---|
+| Plugin display name | "MCP Bridge" / "Vectorworks MCP" | **Fuse VW Gantry** |
+| .vlb basename | `vectorworks-mcp.vlb` | `FuseVWGantry.vlb` |
+| .vwr bundle directory | `vectorworks-mcp.vwr/` | `FuseVWGantry.vwr/` |
+| Universal name (menu) | `"VWMCPBridge"` | `"FuseVWGantry"` |
+| Universal name (palette) | `"VWMCPStatusPalette"` | `"FuseVWGantryPalette"` |
+| `DefaultPluginVWRIdentifier()` return | `"vectorworks-mcp"` | `"FuseVWGantry"` |
+| Settings file basename | `vectorworks-mcp-config.json` | `fuse-vw-gantry-config.json` |
+| Workspace menu category | `"Tools"` | `"Fuse"` |
+| Rust binary | `vectorworks-mcp-server.exe` | `fuse-vw-gantry-server.exe` |
+| `.mcp.json` server key | `"vectorworks-2026"` | `"fuse-vw-gantry-2026"` |
+
+**Kept as-is** (internal symbols, no VW visibility, high churn cost):
+- C++ class names (`CMcpBridge`, `CMcpStatusPalette`, `CMcpJSProvider`, `CMcpBridge_EventSink`)
+- Source filenames (`ExtMcpBridge.{h,cpp}`, `ExtMcpPalette.{h,cpp}`, `BridgeCore.{h,cpp}`)
+- Namespaces (`VWMcp`, `vwmcp`, `Extensions`)
+- UUIDs (`0xa1b2c3d4-...` for menu, `0x6f4e9a02-...` for palette)
+- Repo + directory name (`D:\CODE\vectorworks-mcp\`, GitHub fork)
+- `.vcxproj` filename (build-system internal); `<TargetName>` updated to `FuseVWGantry`
+
+**Workspace re-bind required:** since the universal name changed, anyone who had the menu dragged into their workspace needs to re-drag it from **Tools → Workspaces → Edit Workspace** (find "Fuse VW Gantry" under the **Fuse** category).
+
+**Why now:** preparing to register the plugin with `devsupport@vectorworks.net` for VW2026+ credentials. Wanted a clean, self-identifying name on the registration form rather than the upstream's generic "MCP Bridge" branding. Picked "Fuse VW Gantry" so future Fuse plugins can share the family naming (`FuseMA3Gantry`, `FuseDisguiseGantry`, etc.) — see naming discussion in conversation log.
+
+**Historical narrative below preserves the old "MCP Bridge" / "vectorworks-mcp" names** where it documents what existed at the time (smoke test alerts, 2026-04-26 bug fixes). Path references in TL;DR / .mcp.json / file-tree sections have been updated to reflect current state.
 
 ## Confirmed working end-to-end
 
@@ -106,18 +137,19 @@ This is defense-in-depth — even if the timing changes in some future VW versio
 
 ## TL;DR — what's on disk right now
 
-- **Plugin (VW2025 build)** at `%APPDATA%\Nemetschek\Vectorworks\2025\Plug-ins\vectorworks-mcp.vlb` — 664KB, MD5 `4b7bcf0b...`
-- **Plugin (VW2026 build)** at `%APPDATA%\Nemetschek\Vectorworks\2026\Plug-ins\vectorworks-mcp.vlb` — 661KB, MD5 `8e525c71...`
-- **Rust MCP server** at `D:\CODE\vectorworks-mcp\mcp-server\target\release\vectorworks-mcp-server.exe` — 3.6MB
-- All builds clean, no warnings (one cosmetic post-build pwsh.exe message — ignorable)
+- **Plugin (VW2025 build)** at `%APPDATA%\Nemetschek\Vectorworks\2025\Plug-ins\FuseVWGantry.vlb` (rebuild required after rename pass — old `vectorworks-mcp.vlb` should be removed)
+- **Plugin (VW2026 build)** at `%APPDATA%\Nemetschek\Vectorworks\2026\Plug-ins\FuseVWGantry.vlb` (rebuild required)
+- **Resource bundle** alongside each .vlb: `FuseVWGantry.vwr/` (Strings + html/)
+- **Rust MCP server** at `D:\CODE\vectorworks-mcp\mcp-server\target\release\fuse-vw-gantry-server.exe` (rebuild required)
+- All pre-rename builds clean, no warnings (one cosmetic post-build pwsh.exe message — ignorable)
 
 ---
 
 ## Architecture (revised)
 
 ```
-Claude  --stdio-->  vectorworks-mcp-server.exe  --TCP localhost:port-->  vectorworks-mcp.vlb (in VW)
-                    (Rust, rmcp crate)                                    (C++, VCOM SDK plugin)
+Claude  --stdio-->  fuse-vw-gantry-server.exe  --TCP localhost:port-->  FuseVWGantry.vlb (in VW)
+                    (Rust, rmcp crate)                                   (C++, VCOM SDK plugin)
 ```
 
 **Why TCP not Unix socket?** Tokio's `UnixStream` is POSIX-only. Rather than fight Windows AF_UNIX in Rust (would need raw `windows-sys` + manual async glue), we use TCP localhost on both sides. Tokio TCP works everywhere, C++ TCP works everywhere, perf cost is negligible at our message rate.
@@ -131,8 +163,8 @@ Both VW versions can run concurrently with their own bridges, no collision.
 
 **Server binary takes a `--vw-version` flag:**
 ```
-vectorworks-mcp-server --vw-version 2025   # talks to port 27230
-vectorworks-mcp-server --vw-version 2026   # talks to port 27231 (default)
+fuse-vw-gantry-server --vw-version 2025   # talks to port 27230
+fuse-vw-gantry-server --vw-version 2026   # talks to port 27231 (default)
 ```
 Accepts either year (2025/2026) or short tag (30/31).
 
@@ -170,26 +202,26 @@ In any project where you want Claude to drive VW, add to `.mcp.json` at project 
 ```json
 {
   "mcpServers": {
-    "vectorworks-2026": {
-      "command": "D:/CODE/vectorworks-mcp/mcp-server/target/release/vectorworks-mcp-server.exe",
+    "fuse-vw-gantry-2026": {
+      "command": "D:/CODE/vectorworks-mcp/mcp-server/target/release/fuse-vw-gantry-server.exe",
       "args": ["--vw-version", "2026"]
     },
-    "vectorworks-2025": {
-      "command": "D:/CODE/vectorworks-mcp/mcp-server/target/release/vectorworks-mcp-server.exe",
+    "fuse-vw-gantry-2025": {
+      "command": "D:/CODE/vectorworks-mcp/mcp-server/target/release/fuse-vw-gantry-server.exe",
       "args": ["--vw-version", "2025"]
     }
   }
 }
 ```
 
-Restart Claude Code session. Tools `mcp__vectorworks-2026__run_script` etc. become available.
+Restart Claude Code session. Tools `mcp__fuse-vw-gantry-2026__run_script` etc. become available.
 
 ### 5. Smoke tests (in order of growing confidence)
 
 **Test 1 — server reaches the plugin:**
 With the bridge menu clicked in VW, run from a shell:
 ```
-"D:/CODE/vectorworks-mcp/mcp-server/target/release/vectorworks-mcp-server.exe" --vw-version 2026
+"D:/CODE/vectorworks-mcp/mcp-server/target/release/fuse-vw-gantry-server.exe" --vw-version 2026
 ```
 On stderr you should see:
 ```
@@ -255,7 +287,7 @@ Windows SDK: 10.0.26100.0 (only one installed; supports AF_INET fine).
 cd D:\CODE\vectorworks-mcp\mcp-server
 cargo build --release
 ```
-Output at `target/release/vectorworks-mcp-server.exe`. Tokio + rmcp; no Windows-specific deps (TCP works everywhere).
+Output at `target/release/fuse-vw-gantry-server.exe`. Tokio + rmcp; no Windows-specific deps (TCP works everywhere).
 
 ---
 
@@ -339,17 +371,24 @@ LICENSE                                  (upstream MIT)
 README.md                                (upstream)
 FORK_NOTES.md                            (this file)
 vw-plugin/
-├── src/
-│   ├── ModuleMain.cpp                   (modified — namespace fix)
+├── src/                                 (internal C++ filenames preserved post-rename)
+│   ├── ModuleMain.cpp                   (modified — namespace fix; VWR identifier now "FuseVWGantry")
 │   ├── ExtMcpBridge.h                   (modified — macro fix, struct cleanup)
-│   ├── ExtMcpBridge.cpp                 (modified — Python via IPythonScriptEngine, port-based startup, API signature fixes)
+│   ├── ExtMcpBridge.cpp                 (modified — Python via IPythonScriptEngine, port-based startup, API signature fixes; universal name now "FuseVWGantry")
+│   ├── ExtMcpPalette.h                  (NEW — palette extension declaration)
+│   ├── ExtMcpPalette.cpp                (NEW — palette extension; universal name "FuseVWGantryPalette", title "Fuse VW Gantry")
+│   ├── BridgeCore.h                     (NEW — shared command core)
+│   ├── BridgeCore.cpp                   (NEW — shared command core; settings file fuse-vw-gantry-config.json)
 │   ├── SocketBridge.h                   (rewritten — cross-platform TCP)
 │   ├── SocketBridge.cpp                 (rewritten — cross-platform TCP)
 │   └── StdAfx.h                         (NEW — minimal precompiled-header substitute)
-├── vectorworks-mcp.vcxproj              (NEW — VS 2022 build configuration)
+├── vectorworks-mcp.vcxproj              (NEW — VS 2022 build configuration; TargetName=FuseVWGantry, ProjectName=FuseVWGantry)
+├── FuseVWGantry.vwr/                    (resource bundle — formerly vectorworks-mcp.vwr/)
+│   ├── Strings/Default.vwstrings        (UTF-16 LE BOM)
+│   └── html/                            (palette UI: index.html, main.js, style.css)
 └── build/
-    ├── Release/vectorworks-mcp.vlb              (VW2025 build)
-    └── Release-VW2026/vectorworks-mcp.vlb       (VW2026 build)
+    ├── Release/FuseVWGantry.vlb                 (VW2025 build)
+    └── Release-VW2026/FuseVWGantry.vlb          (VW2026 build)
 mcp-server/
 ├── Cargo.toml                           (unchanged)
 └── src/

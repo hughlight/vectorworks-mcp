@@ -1,6 +1,6 @@
 //
 // ExtMcpPalette.cpp
-// Status/control palette for the Vectorworks MCP Bridge.
+// Status/control palette for Fuse VW Gantry.
 //
 
 #include "StdAfx.h"
@@ -165,7 +165,7 @@ void CMcpStatusPalette::DefineSinks()
 
 const TXString& CMcpStatusPalette::GetUniversalName()
 {
-    fUniversalName = "VWMCPStatusPalette";
+    fUniversalName = "FuseVWGantryPalette";
     return fUniversalName;
 }
 
@@ -176,7 +176,7 @@ Sint32 CMcpStatusPalette::GetVersion()
 
 TXString CMcpStatusPalette::GetTitle()
 {
-    return "MCP Bridge";
+    return "Fuse VW Gantry";
 }
 
 bool CMcpStatusPalette::GetInitialSize(ViewCoord& outCX, ViewCoord& outCY)

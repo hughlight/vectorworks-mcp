@@ -1,5 +1,5 @@
 //
-// ModuleMain.cpp — Vectorworks MCP Bridge Plugin entry point.
+// ModuleMain.cpp — FuseVWGantry plugin entry point.
 // Registers two extensions:
 //   * Menu     — toggle the bridge on/off
 //   * Palette  — status display + Start/Stop button + Auto-start toggle
@@ -12,8 +12,8 @@
 #include "BridgeCore.h"
 
 // Identifies which .vwr resource bundle to load. Must exactly match the
-// folder name (or packaged file basename) — vectorworks-mcp.vwr.
-const char* DefaultPluginVWRIdentifier() { return "vectorworks-mcp"; }
+// folder name (or packaged file basename) — FuseVWGantry.vwr.
+const char* DefaultPluginVWRIdentifier() { return "FuseVWGantry"; }
 
 extern "C" Sint32 GS_EXTERNAL_ENTRY plugin_module_ver() { return SDK_VERSION; }
 

@@ -6,7 +6,7 @@ namespace Extensions
 {
     using namespace VWFC::PluginSupport;
 
-    // Menu Extension — MCP Bridge start/stop
+    // Menu Extension — Fuse VW Gantry start/stop
     class CMcpBridge : public VWExtensionMenu
     {
         DEFINE_VWMenuExtension;

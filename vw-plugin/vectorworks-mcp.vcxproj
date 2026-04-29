@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!--
-    vectorworks-mcp plugin — built against VW2025 SDK by default.
+    FuseVWGantry plugin — built against VW2025 SDK by default.
     To build against VW2026, set the VWSDKRoot property on the MSBuild command line:
         msbuild.exe vectorworks-mcp.vcxproj /p:Configuration=Release /p:Platform=x64 /p:VWSDKRoot="D:\CODE\TH_VWX\VWX_SDK\2026-NNA-eng-win-SDK\SDK\SDKVW(832364)"
   -->
@@ -23,8 +23,8 @@
 
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F1B04A4D-FEE6-40CA-B876-1CE52C5D85C7}</ProjectGuid>
-    <RootNamespace>vectorworksmcp</RootNamespace>
-    <ProjectName>vectorworks-mcp</ProjectName>
+    <RootNamespace>fusevwgantry</RootNamespace>
+    <ProjectName>FuseVWGantry</ProjectName>
     <!-- Win10 1803 (April 2018) is the minimum for AF_UNIX support; this
          machine has 10.0.26100.0 installed which is fine. -->
     <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
@@ -51,7 +51,7 @@
   <PropertyGroup>
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)build\$(Configuration)\obj\</IntDir>
-    <TargetName>vectorworks-mcp</TargetName>
+    <TargetName>FuseVWGantry</TargetName>
     <TargetExt>.vlb</TargetExt>
     <LinkIncremental Condition="'$(Configuration)'=='Debug'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)'=='Release'">false</LinkIncremental>
@@ -128,10 +128,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="vectorworks-mcp.vwr\Strings\Default.vwstrings" />
-    <None Include="vectorworks-mcp.vwr\html\index.html" />
-    <None Include="vectorworks-mcp.vwr\html\main.js" />
-    <None Include="vectorworks-mcp.vwr\html\style.css" />
+    <None Include="FuseVWGantry.vwr\Strings\Default.vwstrings" />
+    <None Include="FuseVWGantry.vwr\html\index.html" />
+    <None Include="FuseVWGantry.vwr\html\main.js" />
+    <None Include="FuseVWGantry.vwr\html\style.css" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

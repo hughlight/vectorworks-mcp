@@ -1,7 +1,7 @@
 //
 // ExtMcpPalette.h
 // Web Palette: status display + Start/Stop toggle + Auto-start checkbox.
-// HTML/CSS/JS lives in vectorworks-mcp.vwr/html/.
+// HTML/CSS/JS lives in FuseVWGantry.vwr/html/.
 //
 
 #pragma once

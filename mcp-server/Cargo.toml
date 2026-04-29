@@ -1,10 +1,10 @@
 [package]
-name = "vectorworks-mcp-server"
+name = "fuse-vw-gantry-server"
 version = "0.1.0"
 edition = "2024"
 
 [[bin]]
-name = "vectorworks-mcp-server"
+name = "fuse-vw-gantry-server"
 path = "src/main.rs"
 
 [dependencies]

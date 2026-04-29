@@ -38,19 +38,19 @@ async fn main() -> Result<()> {
         },
     };
 
-    tracing::info!("Vectorworks MCP Server starting (vw_short={})", vw_short);
+    tracing::info!("Fuse VW Gantry server starting (vw_short={})", vw_short);
     tracing::info!("Endpoint: 127.0.0.1:{}", bridge::port_for(vw_short));
 
     if bridge::is_connected(vw_short).await {
-        tracing::info!("Vectorworks bridge: connected");
+        tracing::info!("Fuse VW Gantry bridge: connected");
     } else {
-        tracing::warn!("Vectorworks bridge: not connected (plugin may not be loaded)");
+        tracing::warn!("Fuse VW Gantry bridge: not connected (plugin may not be loaded)");
     }
 
     let server = server::VwMcpServer::new(vw_short);
     let service = server.serve(rmcp::transport::stdio()).await?;
 
-    tracing::info!("Vectorworks MCP Server running on stdio");
+    tracing::info!("Fuse VW Gantry server running on stdio");
     service.waiting().await?;
     Ok(())
 }

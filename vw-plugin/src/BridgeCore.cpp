@@ -39,7 +39,7 @@ std::string GetSettingsPath()
     char yearstr[8]; std::snprintf(yearstr, sizeof(yearstr), "%d", year);
 
     std::string base = GetAppDataRoamingDir();
-    return base + "\\Nemetschek\\Vectorworks\\" + yearstr + "\\vectorworks-mcp-config.json";
+    return base + "\\Nemetschek\\Vectorworks\\" + yearstr + "\\fuse-vw-gantry-config.json";
 }
 
 // ── Settings load / save ────────────────────────────────────────────────

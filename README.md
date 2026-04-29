@@ -1,84 +1,113 @@
-# Vectorworks MCP
+# Fuse VW Gantry
 
-Claude (or any LLM) から Vectorworks を操作するための [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) サーバー。
+Vectorworks plugin + MCP server bridging Claude (or any MCP client) to Vectorworks 2025/2026 on Windows.
 
-Vectorworks SDK C++ プラグインを Vectorworks 内にロードし、Unix Domain Socket 経由で MCP サーバーと通信することで、LLM が Vectorworks の全機能にアクセスできます。
-
-**世界初の Vectorworks MCP サーバー。**
+> **Lineage:** This repo is a substantially rewritten fork of [mako-357/vectorworks-mcp](https://github.com/mako-357/vectorworks-mcp). Upstream contributed the architectural sketch (C++ plugin owns a local socket, Rust process bridges to MCP) and the wire-protocol tool shapes. The implementation has been ported to Windows, hardened for production use, extended with a status palette + auto-start, and dual-targeted at VW2025 + VW2026. See `FORK_NOTES.md` for details. The repo name remains `vectorworks-mcp` for upstream alignment; the plugin itself is Fuse VW Gantry.
 
 ## Architecture
 
 ```
-Claude ──stdio──> MCP Server (Rust)
-                       │
-                  Unix Socket (/tmp/vw-mcp-bridge.sock)
-                       │
-                  Vectorworks Plugin (.vwlibrary)
-                       │
-                  Vectorworks (VCOM SDK)
+Claude  --stdio-->  fuse-vw-gantry-server.exe  --TCP localhost-->  FuseVWGantry.vlb (in VW)
+                    (Rust, rmcp crate)                              (C++, VCOM SDK plugin)
 ```
 
-## MCP Tools
+VW2025 plugin listens on `127.0.0.1:27230`, VW2026 on `127.0.0.1:27231` (formula: `27200 + SDK_VERSION/100`). Both VW versions can run concurrently.
+
+## MCP tools
 
 | Tool | Description |
 |------|-------------|
-| `get_drawing_info` | 図面情報を取得 |
-| `list_layers` | レイヤー一覧を取得 |
-| `create_line` | 線分を描画 |
-| `create_rect` | 四角形を描画 |
-| `create_circle` | 円を描画 |
-| `run_script` | VectorScript / Python スクリプトを実行 |
+| `get_drawing_info` | Document state — has-document, layer count |
+| `list_layers` | Layer names in current document |
+| `create_line` | Draw a line segment |
+| `create_rect` | Draw a rectangle |
+| `create_circle` | Draw a circle |
+| `run_script` | Execute Python or VectorScript with stdout/stderr capture |
 
 ## Prerequisites
 
-- **Vectorworks 2025+** (Mac or Windows)
-- **Vectorworks SDK** ([GitHub](https://github.com/Vectorworks/developer-sdk))
-- **Xcode** (Mac) or **Visual Studio** (Windows)
-- **Rust** (for MCP server): [rustup.rs](https://rustup.rs/)
+- Vectorworks 2025 or 2026 (Windows)
+- [Vectorworks SDK](https://github.com/Vectorworks/developer-sdk) for the matching VW version
+- Visual Studio 2022 (toolset v145, Windows 10 SDK 10.0.26100.0)
+- [Rust](https://rustup.rs) for the MCP server
 
 ## Build
 
-### MCP Server (Rust)
+### Rust MCP server
 
 ```bash
 cd mcp-server
-cargo build
+cargo build --release
 ```
 
-### Vectorworks Plugin (C++)
+Output: `mcp-server/target/release/fuse-vw-gantry-server.exe`.
 
-Requires Vectorworks SDK. See [SDK Examples](https://github.com/VectorworksDeveloper/SDKExamples) for build setup.
+### C++ plugin
+
+Default build targets VW2025:
+
+```bash
+"F:/Visual_Studio/MSBuild/Current/Bin/MSBuild.exe" \
+  "D:/CODE/vectorworks-mcp/vw-plugin/vectorworks-mcp.vcxproj" \
+  -p:Configuration=Release -p:Platform=x64
+```
+
+For VW2026, override `VWSDKRoot`:
+
+```bash
+... -p:VWSDKRoot="D:/CODE/TH_VWX/VWX_SDK/2026-NNA-eng-win-SDK/SDK/SDKVW(832364)" \
+    -p:OutDir="D:/CODE/vectorworks-mcp/vw-plugin/build/Release-VW2026/" \
+    -p:IntDir="D:/CODE/vectorworks-mcp/vw-plugin/build/Release-VW2026/obj/"
+```
+
+Output: `vw-plugin/build/Release/FuseVWGantry.vlb` (or `Release-VW2026/`).
+
+## Install
+
+Copy to the VW plugin folder for the matching version:
+
+```
+%APPDATA%/Nemetschek/Vectorworks/<year>/Plug-ins/
+├── FuseVWGantry.vlb
+└── FuseVWGantry.vwr/    (entire directory — strings + palette HTML/JS)
+```
+
+For shared-team distribution via a workgroup folder (e.g. Dropbox), drop the same files into `<WorkgroupRoot>/<year>/Plug-ins/` instead.
 
 ## Setup
 
-### 1. Load the plugin in Vectorworks
+1. Restart Vectorworks. Dismiss the "Unknown Developer Plug-ins" dialog (one-time, until plugin credentials registration).
+2. Open the palette: **Window → Palettes → Fuse VW Gantry**.
+3. Click **Start bridge**. The status dot turns green; endpoint shows `127.0.0.1:27231` (VW2026).
+4. Optional: tick **Start bridge on Vectorworks launch** to auto-start on next VW boot.
+5. (Optional) Add the menu command via **Tools → Workspaces → Edit Workspace** — drag "Fuse VW Gantry" from the Fuse category into a menu.
 
-Place the built plugin in the Vectorworks `Plug-ins` folder.
+## Claude Code configuration
 
-### 2. Start the MCP Bridge
-
-In Vectorworks, run the "MCP Bridge" menu command to start the socket server.
-
-### 3. Configure Claude Code
-
-Add to your project's `.mcp.json`:
+Add to `.mcp.json` at any project root:
 
 ```json
 {
   "mcpServers": {
-    "vectorworks": {
-      "command": "/path/to/vectorworks-mcp-server",
-      "args": []
+    "fuse-vw-gantry-2026": {
+      "command": "D:/CODE/vectorworks-mcp/mcp-server/target/release/fuse-vw-gantry-server.exe",
+      "args": ["--vw-version", "2026"]
+    },
+    "fuse-vw-gantry-2025": {
+      "command": "D:/CODE/vectorworks-mcp/mcp-server/target/release/fuse-vw-gantry-server.exe",
+      "args": ["--vw-version", "2025"]
     }
   }
 }
 ```
 
-## Related
+Restart the Claude Code session. Tools `mcp__fuse-vw-gantry-2026__run_script` etc. become available.
 
-- [autocad-mcp](https://github.com/mako-357/autocad-mcp) — AutoCAD MCP server
-- [gfp-cad](https://github.com/mako-357/gfp-cad) — Lightweight BIM with multi-CAD output
+## Settings
+
+Auto-start preference is persisted at:
+`%APPDATA%/Nemetschek/Vectorworks/<year>/fuse-vw-gantry-config.json`
 
 ## License
 
-MIT
+MIT (inherited from upstream).

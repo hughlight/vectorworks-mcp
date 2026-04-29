@@ -1,5 +1,5 @@
 //
-// ExtMcpBridge.cpp — Menu extension that toggles the SocketBridge.
+// ExtMcpBridge.cpp — FuseVWGantry menu extension that toggles the SocketBridge.
 // All command handling + bridge lifecycle lives in BridgeCore.{h,cpp}.
 // This file is just the menu shell.
 //
@@ -17,9 +17,9 @@ namespace Extensions
     static SMenuDef gMenuDef = {
         /*Needs*/       EMenuEnableFlags::DocIsActive,
         /*NeedsNot*/    EMenuEnableFlags::None,
-        /*Title*/       {"VWMCPBridge",  "menu_title"},
-        /*Category*/    {"VWMCPBridge",  "menu_category"},
-        /*HelpText*/    {"VWMCPBridge",  "menu_help"},
+        /*Title*/       {"FuseVWGantry",  "menu_title"},
+        /*Category*/    {"FuseVWGantry",  "menu_category"},
+        /*HelpText*/    {"FuseVWGantry",  "menu_help"},
         // Created in VW2025 line so the same source compiles + ships against
         // both VW2025 (SDK 3000) and VW2026 (SDK 3100). VW won't load a menu
         // tagged "created in 26" against a 25 build.
@@ -33,7 +33,7 @@ namespace Extensions
 IMPLEMENT_VWMenuExtension(
     /*Extension class*/ CMcpBridge,
     /*Event sink*/      CMcpBridge_EventSink,
-    /*Universal name*/  "VWMCPBridge",
+    /*Universal name*/  "FuseVWGantry",
     /*Version*/         1,
     /*UUID*/            0xa1b2c3d4, 0xe5f6, 0x7890, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90);
 
@@ -64,19 +64,19 @@ void CMcpBridge_EventSink::DoInterface()
     if (bridge.IsRunning())
     {
         vwmcp::StopBridge();
-        gSDK->AlertInform(TXString("MCP Bridge stopped."), TXString(""), false);
+        gSDK->AlertInform(TXString("Fuse VW Gantry stopped."), TXString(""), false);
     }
     else
     {
         if (vwmcp::StartBridgeIfNeeded())
         {
-            TXString msg("MCP Bridge started at ");
+            TXString msg("Fuse VW Gantry started at ");
             msg += TXString(vwmcp::GetEndpointString().c_str());
             gSDK->AlertInform(msg, TXString("Use Claude Code to connect."), false);
         }
         else
         {
-            gSDK->AlertInform(TXString("Failed to start MCP Bridge."), TXString(""), false);
+            gSDK->AlertInform(TXString("Failed to start Fuse VW Gantry."), TXString(""), false);
         }
     }
 }

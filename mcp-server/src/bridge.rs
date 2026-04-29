@@ -52,7 +52,7 @@ pub async fn send(
     let mut stream = TcpStream::connect(&addr)
         .await
         .with_context(|| format!(
-            "Could not connect to {}. Is the VW MCP Bridge plugin loaded and started?",
+            "Could not connect to {}. Is the Fuse VW Gantry plugin loaded and started in Vectorworks?",
             addr
         ))?;
 

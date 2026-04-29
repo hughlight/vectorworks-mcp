@@ -1,4 +1,4 @@
-// MCP Bridge palette — JS bridge + UI logic.
+// Fuse VW Gantry palette — JS bridge + UI logic.
 //
 // Bridge functions exposed by the C++ JS provider (see ExtMcpPalette.cpp):
 //   window.requestStatus()     — request a fresh updateStatus() push

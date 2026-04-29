@@ -1,4 +1,4 @@
-// StdAfx.h — minimal precompiled-header substitute for vectorworks-mcp.
+// StdAfx.h — minimal precompiled-header substitute for FuseVWGantry.
 // Source files include this to get the Vectorworks SDK + namespaces. PCH is
 // disabled in the .vcxproj so this is a regular header that just centralizes
 // the SDK include + using-declarations the upstream code expects.

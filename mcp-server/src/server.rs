@@ -114,9 +114,10 @@ impl ServerHandler for VwMcpServer {
     fn get_info(&self) -> ServerInfo {
         let mut info = ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
         info.instructions = Some(format!(
-            "Vectorworks MCP Server (target VW short tag: {}). Tools: drawing info, \
-             layer list, basic drawing primitives, and run_script for arbitrary \
-             VectorScript or Python execution with stdout/stderr capture.",
+            "Fuse VW Gantry — Vectorworks MCP server (target VW short tag: {}). \
+             Tools: drawing info, layer list, basic drawing primitives, and \
+             run_script for arbitrary VectorScript or Python execution with \
+             stdout/stderr capture.",
             self.vw_short
         ));
         info

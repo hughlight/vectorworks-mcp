@@ -28,7 +28,7 @@ void StopBridge();
 std::string GetEndpointString();
 
 // ── Persistent settings ─────────────────────────────────────────────────
-// Lives at %APPDATA%\Nemetschek\Vectorworks\<ver>\vectorworks-mcp-config.json
+// Lives at %APPDATA%\Nemetschek\Vectorworks\<ver>\fuse-vw-gantry-config.json
 // Schema: {"auto_start": false, "version": 1}
 
 struct Settings
