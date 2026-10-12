@@ -44,7 +44,9 @@ Context run passed twice: once in the process where the control run later faulte
 3. Ready = port 27231 open AND a `[document]` in the main window title.
 VW2026 has no `Logs\` folder: `Vectorworks Log.txt` (open/save/close events), `ErrorOut.txt` and the `Sentry\` folder are the crash evidence.
 
-**Still open:** plugin credentials (dialog on every launch), the 25 s / 30 s per-call ceilings, Mac build, VW2027 SDK 3200, merging the `harden/crash-resistance` input-validation and framing fixes, VectorScript stdout capture (still none; `IVectorScriptEngine` has no logger).
+**Phase 3 started the same day (L2 tools, `docs/coverage-spec.md`):** `list_classes`, `list_record_formats`, `read_records_by_format`, `export_ifc` and `vs_signature` live in `mcp-server/src/server.rs` as templated Python bodies over `run_script` (transaction off, JSON on stdout). `scripts/mcp_smoke.py` drives the release server over stdio and calls them; all passed against live VW except `export_ifc`, where `vs.IFC_ExportNoUI` returned false and wrote nothing on the blank scratch document (tried forward-slash, backslash and relative paths; a wall was present). Needs a real model with IFC data to verify.
+
+**Still open:** `export_ifc` verification on a real model, plugin credentials (dialog on every launch), the 25 s / 30 s per-call ceilings, Mac build, VW2027 SDK 3200, merging the `harden/crash-resistance` input-validation and framing fixes, VectorScript stdout capture (still none; `IVectorScriptEngine` has no logger).
 
 ## Confirmed working end-to-end
 
