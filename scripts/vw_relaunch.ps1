@@ -37,13 +37,6 @@ function PortOpen([int]$p) {
     } catch { return $false }
 }
 
-if (-not $VwxPath) {
-    $VwxPath = Join-Path $env:TEMP 'gantry-test.vwx'
-    Copy-Item -LiteralPath $blank -Destination $VwxPath -Force
-    Log "Scratch document: $VwxPath (copy of TEST BLANK FILE.vwx)"
-}
-if (-not (Test-Path -LiteralPath $VwxPath)) { Log "No such file: $VwxPath"; exit 1 }
-
 $running = @(Get-Process Vectorworks2026 -ErrorAction SilentlyContinue)
 if ($running.Count -gt 0) {
     if (-not $Force) {
@@ -56,6 +49,15 @@ if ($running.Count -gt 0) {
     Get-Process vectorworks_error_handler -ErrorAction SilentlyContinue |
         Stop-Process -Force -ErrorAction SilentlyContinue
 }
+
+# Copy the scratch document only after VW is gone: a running VW holds the
+# previous scratch copy open and the copy would fail.
+if (-not $VwxPath) {
+    $VwxPath = Join-Path $env:TEMP 'gantry-test.vwx'
+    Copy-Item -LiteralPath $blank -Destination $VwxPath -Force
+    Log "Scratch document: $VwxPath (copy of TEST BLANK FILE.vwx)"
+}
+if (-not (Test-Path -LiteralPath $VwxPath)) { Log "No such file: $VwxPath"; exit 1 }
 
 if ($PyMode) {
     $env:VWMCP_PY_MODE = $PyMode
@@ -87,13 +89,22 @@ while ((Get-Date) -lt $deadline) {
         }
     } catch { Log "dismiss_dialog.py failed: $_" }
 
-    if (PortOpen $Port) {
-        $main = Get-Process Vectorworks2026 | Where-Object MainWindowTitle | Select-Object -First 1
-        Log "Port $Port open. Main window: '$($main.MainWindowTitle)' (PID $($main.Id))"
+    # Ready means: bridge listening AND the document is open. The port opens
+    # early (auto-start fires during plug-in init) while VW is still loading
+    # the file, so the port alone is not enough. The main window title carries
+    # "[<file>]" once a document is active.
+    $main = Get-Process Vectorworks2026 -ErrorAction SilentlyContinue |
+        Where-Object MainWindowTitle | Select-Object -First 1
+    $title = if ($main) { $main.MainWindowTitle } else { '' }
+    if ((PortOpen $Port) -and ($title -match '\[.+\]')) {
+        Log "Port $Port open. Main window: '$title' (PID $($main.Id))"
         Log "OK -- VW + Gantry ready"
         exit 0
     }
 }
 
-Log "Timed out after $TimeoutSec s; port $Port never opened. Check the palette / _dialog.log."
+$main = Get-Process Vectorworks2026 -ErrorAction SilentlyContinue |
+    Where-Object MainWindowTitle | Select-Object -First 1
+Log "Timed out after $TimeoutSec s. Port open: $(PortOpen $Port). Main window: '$($main.MainWindowTitle)'."
+Log "If the port is open but no document is shown, VW is probably on its Welcome screen; open the file from there."
 exit 1
