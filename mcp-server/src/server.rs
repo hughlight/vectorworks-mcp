@@ -57,6 +57,12 @@ pub struct RunScriptInput {
     pub script: String,
     #[schemars(description = "python or vectorscript (default: python)")]
     pub language: Option<String>,
+    #[schemars(description = "Wrap the script in one undo event and roll it back if it fails (default: true)")]
+    pub transaction: Option<bool>,
+    #[schemars(description = "Name shown in Vectorworks' Edit > Undo for this step (default: 'MCP run_script', max 120 chars)")]
+    pub undo_label: Option<String>,
+    #[schemars(description = "Diagnostic only. 'context' (default) runs Python via the SDK script context; 'execute' uses the legacy bare ExecuteScript path, which crashes Vectorworks on document mutations.")]
+    pub py_mode: Option<String>,
 }
 
 async fn call(vw_short: u32, method: &str, params: serde_json::Value) -> String {
@@ -98,14 +104,33 @@ impl VwMcpServer {
 
     #[tool(
         name = "run_script",
-        description = "Execute VectorScript or Python in Vectorworks. Returns stdout/stderr from Python execution. Trusted environment only."
+        description = "Execute Python (default) or VectorScript inside Vectorworks on its main thread. \
+                       Each call is one undo event (transaction=true): if the script raises or writes \
+                       anything to stderr, the event is rolled back and success is false, so print \
+                       results to stdout only. Returns stdout, stderr, error_code, rolled_back. \
+                       Hard limit of 25 seconds per call; a longer script times out here but may \
+                       still finish inside Vectorworks. After a contained engine fault every call \
+                       returns error=engine_poisoned until Vectorworks is restarted. \
+                       Trusted environment only."
     )]
     async fn run_script(&self, Parameters(i): Parameters<RunScriptInput>) -> String {
-        call(
-            self.vw_short,
-            "run_script",
-            json!({"script": i.script, "language": i.language.unwrap_or_else(|| "python".into())}),
-        ).await
+        let mut params = json!({
+            "script": i.script,
+            "language": i.language.unwrap_or_else(|| "python".into()),
+        });
+        // Only forward the optional fields when given so the plugin applies
+        // its own defaults (transaction=true, undo_label="MCP run_script",
+        // py_mode from VWMCP_PY_MODE or "context").
+        if let Some(t) = i.transaction {
+            params["transaction"] = json!(t);
+        }
+        if let Some(l) = i.undo_label {
+            params["undo_label"] = json!(l);
+        }
+        if let Some(m) = i.py_mode {
+            params["py_mode"] = json!(m);
+        }
+        call(self.vw_short, "run_script", params).await
     }
 }
 

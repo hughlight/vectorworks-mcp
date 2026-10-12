@@ -27,6 +27,11 @@ void StopBridge();
 // Returns the resolved socket endpoint "127.0.0.1:<port>" for display.
 std::string GetEndpointString();
 
+// True once a script raised a contained hardware fault inside the VW
+// scripting engine. run_script refuses every call after that until VW
+// restarts; the document and interpreter state are unknown.
+bool IsEnginePoisoned();
+
 // ── Persistent settings ─────────────────────────────────────────────────
 // Lives at %APPDATA%\Nemetschek\Vectorworks\<ver>\vectorworks-mcp-config.json
 // Schema: {"auto_start": false, "version": 1}
