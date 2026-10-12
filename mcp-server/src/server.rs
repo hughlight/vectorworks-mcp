@@ -71,6 +71,130 @@ pub struct VsSignatureInput {
     pub name: String,
 }
 
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ListRecordFormatsInput {
+    #[schemars(description = "Include hidden formats whose name starts with '__' (plug-in parameter records). Default false.")]
+    pub include_hidden: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ReadRecordsInput {
+    #[schemars(description = "Record format name, e.g. 'Lighting Device' or a custom format")]
+    pub format: String,
+    #[schemars(description = "Restrict to objects on this design layer (exact name). Default: all layers.")]
+    pub layer: Option<String>,
+    #[schemars(description = "Maximum rows to return (default 500)")]
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ExportIfcInput {
+    #[schemars(description = "Absolute output path ending in .ifc. Uses the document's current IFC export settings, no dialog.")]
+    pub path: String,
+}
+
+// --- L2 tools: templated Python bodies over run_script ---
+//
+// Each body prints exactly one JSON document to stdout. The server runs it
+// with transaction=false (reads and exports do not need an undo event) and
+// pretty-prints the parsed JSON. Parameters are injected as Python string
+// literals via py_str (a JSON string literal is a valid Python literal).
+
+fn py_str(s: &str) -> String {
+    serde_json::to_string(s).unwrap_or_else(|_| "\"\"".into())
+}
+
+fn py_opt_str(s: &Option<String>) -> String {
+    match s {
+        Some(v) => py_str(v),
+        None => "None".into(),
+    }
+}
+
+const PY_LIST_CLASSES: &str = r#"import vs, json
+n = vs.ClassNum()
+out = []
+for i in range(1, n + 1):
+    name = vs.ClassList(i)
+    out.append({"name": name, "visibility": vs.GetCVis(name)})
+print(json.dumps({"count": len(out), "visibility_legend": {"0": "visible", "-1": "invisible", "2": "grayed"}, "classes": out}))
+"#;
+
+const PY_LIST_RECORD_FORMATS: &str = r#"import vs, json
+include_hidden = __INCLUDE_HIDDEN__
+lid, n = vs.BuildResourceList(47, 0, '')
+out = []
+for i in range(1, n + 1):
+    name = vs.GetNameFromResourceList(lid, i)
+    if not include_hidden and name.startswith('__'):
+        continue
+    h = vs.GetObject(name)
+    fields = []
+    if h:
+        for f in range(1, vs.NumFields(h) + 1):
+            fields.append({"name": vs.GetFldName(h, f), "type": vs.GetFldType(h, f)})
+    out.append({"name": name, "fields": fields})
+print(json.dumps({"count": len(out), "formats": out}))
+"#;
+
+const PY_READ_RECORDS: &str = r#"import vs, json
+fmt = __FMT__
+layer = __LAYER__
+limit = __LIMIT__
+h = vs.GetObject(fmt)
+if not h:
+    print(json.dumps({"error": "record format not found", "format": fmt}))
+else:
+    names = [vs.GetFldName(h, i) for i in range(1, vs.NumFields(h) + 1)]
+    rows = []
+    truncated = [False]
+    def cb(obj):
+        if len(rows) >= limit:
+            truncated[0] = True
+            return
+        vals = {}
+        for nm in names:
+            vals[nm] = vs.GetRField(obj, fmt, nm)
+        lh = vs.GetLayer(obj)
+        rows.append({"type": vs.GetTypeN(obj), "class": vs.GetClass(obj),
+                     "layer": vs.GetLName(lh) if lh else "", "name": vs.GetName(obj), "values": vals})
+    crit = "(R IN ['" + fmt.replace("'", "''") + "'])"
+    if layer:
+        crit += " & (L='" + layer.replace("'", "''") + "')"
+    vs.ForEachObject(cb, crit)
+    print(json.dumps({"format": fmt, "fields": names, "count": len(rows), "truncated": truncated[0], "rows": rows}))
+"#;
+
+const PY_EXPORT_IFC: &str = r#"import vs, json, os
+path = __PATH__
+ok = vs.IFC_ExportNoUI(path)
+print(json.dumps({"ok": bool(ok), "path": path, "exists": os.path.exists(path)}))
+"#;
+
+/// Run a Python body that prints one JSON document; return it pretty-printed.
+async fn run_python_json(vw_short: u32, script: String, label: &str) -> String {
+    let params = json!({
+        "script": script,
+        "language": "python",
+        "transaction": false,
+        "undo_label": label,
+    });
+    match bridge::send(vw_short, "run_script", params).await {
+        Err(e) => format!("Connection error: {e}"),
+        Ok(r) => {
+            let stdout = r.data.get("stdout").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let stderr = r.data.get("stderr").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if !r.success {
+                return if stderr.is_empty() { format!("Error: {}", r.data) } else { format!("Error: {stderr}") };
+            }
+            match serde_json::from_str::<serde_json::Value>(stdout.trim()) {
+                Ok(v) => serde_json::to_string_pretty(&v).unwrap_or(stdout),
+                Err(_) => stdout,
+            }
+        }
+    }
+}
+
 // --- vs.* signature index (vicquick/vwx-mcp, MIT; see NOTICE) ---
 
 /// 3071 VectorScript/Python `vs.*` signatures: {name: {args, arity, required, ret, cat, doc}}.
@@ -198,6 +322,51 @@ impl VwMcpServer {
             params["py_mode"] = json!(m);
         }
         call(self.vw_short, "run_script", params).await
+    }
+
+    #[tool(
+        name = "list_classes",
+        description = "List every class in the current document with its visibility (0 visible, -1 invisible, 2 grayed)."
+    )]
+    async fn list_classes(&self, Parameters(_): Parameters<EmptyInput>) -> String {
+        run_python_json(self.vw_short, PY_LIST_CLASSES.to_string(), "MCP list_classes").await
+    }
+
+    #[tool(
+        name = "list_record_formats",
+        description = "List the record formats defined in the current document with their field names and type codes. \
+                       Hidden '__' plug-in parameter records are skipped unless include_hidden is true."
+    )]
+    async fn list_record_formats(&self, Parameters(i): Parameters<ListRecordFormatsInput>) -> String {
+        let script = PY_LIST_RECORD_FORMATS.replace(
+            "__INCLUDE_HIDDEN__",
+            if i.include_hidden.unwrap_or(false) { "True" } else { "False" },
+        );
+        run_python_json(self.vw_short, script, "MCP list_record_formats").await
+    }
+
+    #[tool(
+        name = "read_records_by_format",
+        description = "Read every object carrying the given record format: object type, class, layer, name and all \
+                       field values as strings. Optional layer filter and row limit (default 500). Read-only."
+    )]
+    async fn read_records_by_format(&self, Parameters(i): Parameters<ReadRecordsInput>) -> String {
+        let script = PY_READ_RECORDS
+            .replace("__FMT__", &py_str(&i.format))
+            .replace("__LAYER__", &py_opt_str(&i.layer))
+            .replace("__LIMIT__", &i.limit.unwrap_or(500).to_string());
+        run_python_json(self.vw_short, script, "MCP read_records_by_format").await
+    }
+
+    #[tool(
+        name = "export_ifc",
+        description = "Export the current document to an IFC file at the given absolute path using the document's \
+                       saved IFC export settings (vs.IFC_ExportNoUI, no dialog). Large documents may exceed the 25 s \
+                       per-call limit; the export may still complete inside Vectorworks."
+    )]
+    async fn export_ifc(&self, Parameters(i): Parameters<ExportIfcInput>) -> String {
+        let script = PY_EXPORT_IFC.replace("__PATH__", &py_str(&i.path));
+        run_python_json(self.vw_short, script, "MCP export_ifc").await
     }
 
     #[tool(
