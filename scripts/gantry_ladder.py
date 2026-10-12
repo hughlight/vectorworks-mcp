@@ -98,7 +98,7 @@ class Ladder:
         resp = self.run("import vs; print(vs.Count('ALL'))", transaction=False)
         if not resp.get("success"):
             raise RuntimeError(f"count failed: {self.data(resp)}")
-        return int(self.data(resp)["stdout"].strip())
+        return int(float(self.data(resp)["stdout"].strip()))   # vs.Count prints e.g. "0.0"
 
     def step(self, name: str, fn):
         t0 = time.monotonic()

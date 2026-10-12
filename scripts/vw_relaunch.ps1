@@ -74,12 +74,17 @@ while ((Get-Date) -lt $deadline) {
     $alive = @(Get-Process Vectorworks2026 -ErrorAction SilentlyContinue)
     if ($alive.Count -eq 0) { Log "Vectorworks exited during startup"; exit 1 }
 
-    # dismiss_dialog.py clicks the preferred button on any modal VW dialog
-    # (e.g. "Unknown Developer Plug-ins") and logs what it did to
-    # D:\CODE\TH_VWX\scripts\_dialog.log.
+    # Only the "Unknown Developer Plug-ins" dialog gets dismissed. Left to
+    # itself dismiss_dialog.py would also click Cancel on the "Opening File"
+    # progress dialog. It logs what it clicked to D:\CODE\TH_VWX\scripts\_dialog.log.
     try {
-        $out = (& python $dismiss 2>&1 | Out-String).Trim()
-        if ($out -and $out -notmatch '^No VW dialogs') { Log $out }
+        $check = (& python $dismiss --check 2>&1 | Out-String).Trim()
+        if ($check -match 'Unknown Developer') {
+            $out = (& python $dismiss 2>&1 | Out-String).Trim()
+            Log $out
+        } elseif ($check -and $check -notmatch '^No dialogs') {
+            Log "Leaving dialog alone: $($check.Split([Environment]::NewLine)[0])"
+        }
     } catch { Log "dismiss_dialog.py failed: $_" }
 
     if (PortOpen $Port) {
