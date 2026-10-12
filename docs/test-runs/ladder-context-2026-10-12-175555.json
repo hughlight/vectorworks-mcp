@@ -1,0 +1,196 @@
+{
+  "py_mode": "context",
+  "port": 27231,
+  "main_pid": 122128,
+  "timestamp": "2026-10-12-175555",
+  "all_passed": true,
+  "rows": [
+    {
+      "step": "1 ping",
+      "passed": true,
+      "note": "",
+      "response": {
+        "data": "pong",
+        "id": "ladder_3db0020b",
+        "success": true
+      },
+      "ms": 13559,
+      "vw_alive": true
+    },
+    {
+      "step": "2 print('hi')",
+      "passed": true,
+      "note": "",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "context",
+          "rolled_back": false,
+          "stderr": "",
+          "stdout": "hi\n",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_2eb83c43",
+        "success": true
+      },
+      "ms": 240,
+      "vw_alive": true
+    },
+    {
+      "step": "3 vs.GetFName()",
+      "passed": true,
+      "note": "doc='gantry-test.vwx'",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "context",
+          "rolled_back": false,
+          "stderr": "",
+          "stdout": "gantry-test.vwx\n",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_deea968f",
+        "success": true
+      },
+      "ms": 2812,
+      "vw_alive": true
+    },
+    {
+      "step": "4 vs.Rect (object create)",
+      "passed": true,
+      "note": "",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "context",
+          "rolled_back": false,
+          "stderr": "",
+          "stdout": "rect\n",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_48c49834",
+        "success": true
+      },
+      "ms": 24,
+      "vw_alive": true
+    },
+    {
+      "step": "5 vs.NewField (record format)",
+      "passed": true,
+      "note": "NewField -> None",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "context",
+          "rolled_back": false,
+          "stderr": "",
+          "stdout": "None\n",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_b8843dcc",
+        "success": true
+      },
+      "ms": 37,
+      "vw_alive": true
+    },
+    {
+      "step": "6 BuildResourceList(47) + names",
+      "passed": true,
+      "note": "stdout=\"1\\n['MCP_Test']\"",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "context",
+          "rolled_back": false,
+          "stderr": "",
+          "stdout": "1\n['MCP_Test']\n",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_c63f0058",
+        "success": true
+      },
+      "ms": 35,
+      "vw_alive": true
+    },
+    {
+      "step": "7 raise -> success:false",
+      "passed": true,
+      "note": "stderr='Traceback (most recent call last):\\n  File \"<string>\", line 1, in <module>\\nException: x'",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "context",
+          "rolled_back": true,
+          "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nException: x\n",
+          "stdout": "",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_2d7beb18",
+        "success": false
+      },
+      "ms": 32,
+      "vw_alive": true
+    },
+    {
+      "step": "8 mutate+raise rolled back",
+      "passed": true,
+      "note": "count 1 -> 1, rolled_back=True",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "context",
+          "rolled_back": true,
+          "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nException: rollback\n",
+          "stdout": "",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_57e9725b",
+        "success": false
+      },
+      "ms": 66,
+      "vw_alive": true
+    },
+    {
+      "step": "9 ten calls, one Undo each",
+      "passed": true,
+      "note": "count 1 -> 11 after 10 calls -> 10 after one Undo",
+      "response": {
+        "last_call": {
+          "data": {
+            "error_code": 0,
+            "py_mode": "context",
+            "rolled_back": false,
+            "stderr": "",
+            "stdout": "",
+            "transaction": true,
+            "undo_label": "ladder 10"
+          },
+          "id": "ladder_1285b0b4",
+          "success": true
+        },
+        "undo": {
+          "data": {
+            "error_code": 0,
+            "py_mode": "context",
+            "rolled_back": false,
+            "stderr": "",
+            "stdout": "",
+            "transaction": false,
+            "undo_label": "MCP run_script"
+          },
+          "id": "ladder_9426d3ee",
+          "success": true
+        }
+      },
+      "ms": 505,
+      "vw_alive": true
+    }
+  ]
+}
