@@ -1,0 +1,193 @@
+{
+  "py_mode": "execute",
+  "port": 27231,
+  "main_pid": 5704,
+  "timestamp": "2026-10-12-173955",
+  "all_passed": false,
+  "rows": [
+    {
+      "step": "1 ping",
+      "passed": true,
+      "note": "",
+      "response": {
+        "data": "pong",
+        "id": "ladder_9466ab96",
+        "success": true
+      },
+      "ms": 7,
+      "vw_alive": true
+    },
+    {
+      "step": "2 print('hi')",
+      "passed": true,
+      "note": "",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "execute",
+          "rolled_back": false,
+          "stderr": "",
+          "stdout": "hi\n",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_dca3a54e",
+        "success": true
+      },
+      "ms": 37,
+      "vw_alive": true
+    },
+    {
+      "step": "3 vs.GetFName()",
+      "passed": true,
+      "note": "doc='gantry-test.vwx'",
+      "response": {
+        "data": {
+          "error_code": 0,
+          "py_mode": "execute",
+          "rolled_back": false,
+          "stderr": "",
+          "stdout": "gantry-test.vwx\n",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_c7867213",
+        "success": true
+      },
+      "ms": 32,
+      "vw_alive": true
+    },
+    {
+      "step": "4 vs.Rect (object create)",
+      "passed": false,
+      "note": " | CONTAINED FAULT 0xC0000005 -> engine poisoned",
+      "response": {
+        "data": {
+          "error": "script_crashed",
+          "error_code": -2,
+          "fault_code": "0xC0000005",
+          "py_mode": "execute",
+          "rolled_back": false,
+          "stderr": "The script faulted inside the Vectorworks Python engine (0xC0000005). The fault was contained, but the engine state is unknown: scripting is disabled until Vectorworks restarts and the document may be inconsistent. Save As a new file, then restart Vectorworks.",
+          "stdout": "",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_ed97b3c3",
+        "success": false
+      },
+      "ms": 30,
+      "vw_alive": true
+    },
+    {
+      "step": "5 vs.NewField (record format)",
+      "passed": true,
+      "note": "skipped body; checked engine_poisoned refusal",
+      "response": {
+        "data": {
+          "error": "engine_poisoned",
+          "error_code": -3,
+          "fault_code": "0xC0000005",
+          "py_mode": "execute",
+          "rolled_back": false,
+          "stderr": "Scripting is disabled for the rest of this Vectorworks session: an earlier script faulted inside the engine (0xC0000005) and its state is unknown. Save your work and restart Vectorworks.",
+          "stdout": "",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_2c9be213",
+        "success": false
+      },
+      "ms": 13,
+      "vw_alive": true
+    },
+    {
+      "step": "6 BuildResourceList(47) + names",
+      "passed": true,
+      "note": "skipped body; checked engine_poisoned refusal",
+      "response": {
+        "data": {
+          "error": "engine_poisoned",
+          "error_code": -3,
+          "fault_code": "0xC0000005",
+          "py_mode": "execute",
+          "rolled_back": false,
+          "stderr": "Scripting is disabled for the rest of this Vectorworks session: an earlier script faulted inside the engine (0xC0000005) and its state is unknown. Save your work and restart Vectorworks.",
+          "stdout": "",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_a9957c17",
+        "success": false
+      },
+      "ms": 14,
+      "vw_alive": true
+    },
+    {
+      "step": "7 raise -> success:false",
+      "passed": true,
+      "note": "skipped body; checked engine_poisoned refusal",
+      "response": {
+        "data": {
+          "error": "engine_poisoned",
+          "error_code": -3,
+          "fault_code": "0xC0000005",
+          "py_mode": "execute",
+          "rolled_back": false,
+          "stderr": "Scripting is disabled for the rest of this Vectorworks session: an earlier script faulted inside the engine (0xC0000005) and its state is unknown. Save your work and restart Vectorworks.",
+          "stdout": "",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_a384c35e",
+        "success": false
+      },
+      "ms": 13,
+      "vw_alive": true
+    },
+    {
+      "step": "8 mutate+raise rolled back",
+      "passed": true,
+      "note": "skipped body; checked engine_poisoned refusal",
+      "response": {
+        "data": {
+          "error": "engine_poisoned",
+          "error_code": -3,
+          "fault_code": "0xC0000005",
+          "py_mode": "execute",
+          "rolled_back": false,
+          "stderr": "Scripting is disabled for the rest of this Vectorworks session: an earlier script faulted inside the engine (0xC0000005) and its state is unknown. Save your work and restart Vectorworks.",
+          "stdout": "",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_60935bcb",
+        "success": false
+      },
+      "ms": 12,
+      "vw_alive": true
+    },
+    {
+      "step": "9 ten calls, one Undo each",
+      "passed": true,
+      "note": "skipped body; checked engine_poisoned refusal",
+      "response": {
+        "data": {
+          "error": "engine_poisoned",
+          "error_code": -3,
+          "fault_code": "0xC0000005",
+          "py_mode": "execute",
+          "rolled_back": false,
+          "stderr": "Scripting is disabled for the rest of this Vectorworks session: an earlier script faulted inside the engine (0xC0000005) and its state is unknown. Save your work and restart Vectorworks.",
+          "stdout": "",
+          "transaction": true,
+          "undo_label": "MCP run_script"
+        },
+        "id": "ladder_bda9dd6d",
+        "success": false
+      },
+      "ms": 3,
+      "vw_alive": true
+    }
+  ]
+}
