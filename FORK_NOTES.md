@@ -1,8 +1,50 @@
-# vectorworks-mcp — Fork Notes (last updated 2026-04-26)
+# vectorworks-mcp — Fork Notes (last updated 2026-10-12)
 
 **Upstream:** `https://github.com/mako-357/vectorworks-mcp` (1 star, first public release 2026-04-24)
 **Local clone:** `D:\CODE\vectorworks-mcp\`
-**Status: ✅ FULLY OPERABLE — all smoke tests green on VW2026, 2026-04-26.**
+**Status: ✅ WRITE-SAFE — run_script mutations verified on VW2026 31.7.0.879357, 2026-10-12 (see the next section).**
+
+## Update 2026-10-12: run_script is write-safe (ScriptContext + undo bracket + SEH guard)
+
+**Tested on:** Vectorworks Spotlight 2026, exe version 31.7.0.879357 (VW2026 Update 7 line), Windows 11 26200. Plugin built from this branch (commit `df84ed8`) against SDK 3100 (`SDKVW(832364)`), toolset v145. Test document: a scratch copy of `D:\CODE\TH_VWX\TEST BLANK FILE.vwx`.
+
+**What changed (`vw-plugin/src/BridgeCore.cpp`, `mcp-server/src/server.rs`):**
+- Python now runs through `IPythonScriptEngine::ScriptContext_Begin` + `ScriptContext_RunEx` (the SDK's own pattern, `ImageComparisonTesting.cpp`) instead of bare `ExecuteScript`. The main-thread dispatcher from 2026-05-28 (`MainThreadDispatch.{h,cpp}`) is now live-verified too: trace log shows every command draining on the main thread.
+- Every `run_script` is one undo event: `SupportUndoAndRemove` / `SetUndoMethod(kUndoSwapObjects)` / `NameUndoEvent(undo_label)` before, `EndUndoEvent` on success, `UndoAndRemove` on failure. `transaction=false` opts out. Failure means a VCOM error **or any stderr output**, so scripts must print results to stdout.
+- Engine calls sit in POD-only `__try` frames. A contained hardware fault returns `error:"script_crashed"` with the exception code, closes (never replays) the undo event, and poisons the engine: every later `run_script` returns `error:"engine_poisoned"` until VW restarts.
+- `py_mode=execute` (request param) or `VWMCP_PY_MODE=execute` (env var in VW's process) selects the old bare path for A/B control. Program variable 9876 suppresses VS error dialogs during the run.
+- New tool `vs_signature(name)` over vicquick's `vs_index.json` (3071 signatures, MIT, see `NOTICE`).
+
+**Ladder results** (`scripts/gantry_ladder.py`, raw TCP, records in `docs/test-runs/`):
+
+| Step | `py_mode=context` (new path) | `py_mode=execute` (old path, control) |
+|---|---|---|
+| 1 `ping` | PASS | PASS |
+| 2 `print('hi')` | PASS | PASS |
+| 3 `vs.GetFName()` | PASS | PASS |
+| 4 `vs.Rect(0,0,100,100)` | PASS, VW alive | **AV 0xC0000005 inside ExecuteScript**, contained by the SEH guard, VW alive, engine poisoned |
+| 5 `vs.NewField('MCP_Test', …)` (creates the record format) | PASS, VW alive | refused: `engine_poisoned` |
+| 6 `vs.BuildResourceList(47, 0, '')` + names | PASS, returns `['MCP_Test']` | refused: `engine_poisoned` |
+| 7 `raise Exception('x')` | `success:false`, traceback in stderr, no dialog | refused |
+| 8 mutate then raise | rolled back (`vs.Count('ALL')` unchanged, `rolled_back:true`) | refused |
+| 9 ten mutation calls, then one Undo | count +10, one `Undo` removes exactly one | refused |
+
+Context run passed twice: once in the process where the control run later faulted (`ladder-context-2026-10-12-173928.json`) and once in a fresh VW process (`ladder-context-2026-10-12-175555.json`). Control run: `ladder-execute-2026-10-12-173955.json`. Conclusion: the historic crashes (`NewField`, `BuildResourceList(47)`) were the bare `ExecuteScript` call off the script context, exactly as BhaveshY found on VW2024/2025; the dispatcher alone would not have fixed them. ADR: `docs/decisions/001-scriptcontext-over-menu-broker.md`.
+
+**Timings:** 20-70 ms per call once warm. The first `run_script` after a document opens can take ~3-14 s (engine init); a `ping` sent while VW is still loading a file hits the 25 s dispatcher ceiling and returns a timeout error rather than hanging.
+
+**Deployment and naming, as found on 2026-10-12:**
+- The user Plug-ins folder held `FuseVWGantry.vlb_OLD` / `FuseVWGantry.vwr_OLD` (disabled). Those came from the local `harden/crash-resistance` branch (commit `0641100` renamed the plugin to "Fuse VW Gantry"; `3718da8` added an earlier SEH shim, input validation and socket framing fixes; `notes/` there has the hardening audit). That branch has not been merged here. Its config file is `fuse-vw-gantry-config.json`; this branch reads `vectorworks-mcp-config.json` (`auto_start: true`).
+- Current deploy: `%APPDATA%\Nemetschek\Vectorworks\2026\Plug-ins\vectorworks-mcp.vlb` + `vectorworks-mcp.vwr\` from `vw-plugin/build/Release-VW2026/`. Palette and menu show as "MCP Bridge". The `_OLD` files were left in place.
+- No `fuse-vw-gantry` MCP server is configured in this repo's `.mcp.json`; tests ran over raw TCP (`diag/probe_tcp_bridge.py`, `scripts/gantry_ladder.py`).
+
+**Relaunch procedure** (`scripts/vw_relaunch.ps1 -Force`; the `vw-gantry-recovery` skill still points at `D:\CODE\TH_VWX\scripts\vw_relaunch.ps1`, which does not exist):
+1. Kills VW (only do this with a disposable document open), copies the blank test file to `%TEMP%\gantry-test.vwx`, launches VW with it.
+2. Dismisses only the "Unknown Developer Plug-ins" dialog via `D:\CODE\TH_VWX\scripts\dismiss_dialog.py`. On the very first launch after deploying a new `.vlb` that dialog's first button is **Restart** (VW relaunches and drops the file argument); on later launches it is **Continue**. If VW ends up on "Untitled" or the Welcome screen, `Start-Process $env:TEMP\gantry-test.vwx` routes the file to the running instance.
+3. Ready = port 27231 open AND a `[document]` in the main window title.
+VW2026 has no `Logs\` folder: `Vectorworks Log.txt` (open/save/close events), `ErrorOut.txt` and the `Sentry\` folder are the crash evidence.
+
+**Still open:** plugin credentials (dialog on every launch), the 25 s / 30 s per-call ceilings, Mac build, VW2027 SDK 3200, merging the `harden/crash-resistance` input-validation and framing fixes, VectorScript stdout capture (still none; `IVectorScriptEngine` has no logger).
 
 ## Confirmed working end-to-end
 
