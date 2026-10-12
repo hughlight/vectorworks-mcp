@@ -10,6 +10,7 @@
 #include "ExtMcpBridge.h"
 #include "ExtMcpPalette.h"
 #include "BridgeCore.h"
+#include "MainThreadDispatch.h"
 
 // Identifies which .vwr resource bundle to load. Must exactly match the
 // folder name (or packaged file basename) — vectorworks-mcp.vwr.
@@ -27,6 +28,13 @@ extern "C" Sint32 GS_EXTERNAL_ENTRY plugin_module_main(
     using namespace VWFC::PluginSupport;
     using namespace Extensions;
     using namespace VWMcp;
+
+    // 0. Initialize the main-thread dispatcher. plugin_module_main is
+    //    guaranteed to run on VW's main UI thread, so it's the right place to
+    //    create our hidden message-only window. Idempotent — subsequent calls
+    //    no-op. Must happen before SocketBridge::Start so the auto-start path
+    //    can use the dispatcher.
+    vwmcp::MainThreadDispatch::Initialize();
 
     // 1. Menu extension (toggle the bridge).
     REGISTER_Extension<CMcpBridge>(

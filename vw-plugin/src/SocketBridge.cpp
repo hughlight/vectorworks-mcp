@@ -4,9 +4,12 @@
 //
 
 #include "SocketBridge.h"
+#include "MainThreadDispatch.h"
 
+#include <chrono>
 #include <cstring>
 #include <cstdio>
+#include <future>
 #include <sstream>
 
 #ifdef _WIN32
@@ -231,7 +234,30 @@ void SocketBridge::HandleClient(SocketFd clientFd) {
                 nlohmann::json cmd = nlohmann::json::parse(line);
 
                 if (m_handler) {
-                    result = m_handler(cmd);
+                    // The handler must run on VW's main UI thread — VCOM, gSDK,
+                    // and IPythonScriptEngine are not thread-safe. Calling them
+                    // from this worker thread (m_serverThread) races VW's main
+                    // thread and crashes on resource-manager mutations (e.g.
+                    // vs.NewField creating a record format). See
+                    // MainThreadDispatch.h for the dispatch contract.
+                    //
+                    // cmd is captured BY VALUE: if wait_for times out, the task
+                    // may still execute later; a by-ref capture would dangle.
+                    auto handler = m_handler;
+                    auto fut = vwmcp::MainThreadDispatch::SubmitToMain(
+                        [handler, cmd]() { return handler(cmd); });
+
+                    // 25s ceiling, comfortably under the 30s SO_RCVTIMEO so the
+                    // client receives a clean error instead of a TCP timeout.
+                    std::future_status waitStatus = fut.wait_for(std::chrono::seconds(25));
+                    if (waitStatus == std::future_status::ready) {
+                        result = fut.get();
+                    } else {
+                        result["id"] = cmd.value("id", "");
+                        result["success"] = false;
+                        result["data"] = "Main-thread dispatch timed out after 25s. "
+                                         "VW may be blocked on a modal dialog or a long-running script.";
+                    }
                 } else {
                     result["id"] = cmd.value("id", "");
                     result["success"] = false;

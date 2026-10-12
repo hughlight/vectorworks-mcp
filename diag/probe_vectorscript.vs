@@ -20,34 +20,71 @@ VAR
   docName      : STRING;
   vwVersion    : STRING;
   ifcScheme    : STRING;
+  ifcSchemeInt : INTEGER;
+  ifcOk        : BOOLEAN;
   layerCount   : INTEGER;
   classCount   : INTEGER;
   hasDoc       : BOOLEAN;
   outDir       : STRING;
   outPath      : STRING;
   jsonStr      : STRING;
-  fileRef      : INTEGER;
-  homeEnv      : STRING;
-  ts           : INTEGER;
+  fileErr      : INTEGER;
+  ts           : LONGINT;
   lh           : HANDLE;
+  i            : INTEGER;
+  found        : BOOLEAN;
+  ch           : STRING;
+  vMaj, vMin, vMaint, vPlat : INTEGER;
 
   PROCEDURE AppendLn(VAR s : STRING; line : STRING);
   BEGIN
     s := Concat(s, line, Chr(10));
   END;
 
+  FUNCTION BoolStr(b : BOOLEAN) : STRING;
+  BEGIN
+    IF b THEN BoolStr := 'true' ELSE BoolStr := 'false';
+  END;
+
+  { Escape backslashes and double-quotes so VS strings can be embedded inside
+    JSON string literals without breaking strict parsers (jq, json.load, etc.). }
+  FUNCTION JsonEscape(s : STRING) : STRING;
+  VAR
+    k : INTEGER;
+    c : STRING;
+    r : STRING;
+  BEGIN
+    r := '';
+    FOR k := 1 TO Len(s) DO
+    BEGIN
+      c := Copy(s, k, 1);
+      IF c = '\' THEN
+        r := Concat(r, '\\')
+      ELSE IF c = '"' THEN
+        r := Concat(r, '\"')
+      ELSE
+        r := Concat(r, c);
+    END;
+    JsonEscape := r;
+  END;
+
 BEGIN
   { --- Document state --- }
   docPath := GetFPathName;
   docName := GetFName;
-  hasDoc  := (Length(docName) > 0);
+  hasDoc  := (Len(docName) > 0);
 
-  { --- Version --- }
-  vwVersion := GetVWVersion;
+  { --- Version: GetVersion returns via VAR params (major, minor, maint, platform) --- }
+  GetVersion(vMaj, vMin, vMaint, vPlat);
+  vwVersion := Concat(Num2Str(0, vMaj), '.', Num2Str(0, vMin), '.', Num2Str(0, vMaint));
 
-  { --- IFC scheme (the U5-suspicious bit) --- }
-  ifcScheme := IFC_GetIFCScheme;
-  IF Length(ifcScheme) = 0 THEN ifcScheme := 'UNKNOWN';
+  { --- IFC scheme (the U5-suspicious bit) ---
+    IFC_GetIFCScheme(VAR outScheme:INTEGER):BOOLEAN — returns integer scheme code via VAR. }
+  ifcOk := IFC_GetIFCScheme(ifcSchemeInt);
+  IF ifcOk THEN
+    ifcScheme := Num2Str(0, ifcSchemeInt)
+  ELSE
+    ifcScheme := 'UNKNOWN';
 
   { --- Layer + class counts via iteration --- }
   classCount := ClassNum;
@@ -59,25 +96,27 @@ BEGIN
     lh := NextLayer(lh);
   END;
 
-  { --- Timestamp (epoch seconds approximation; VS has no proper time API) --- }
-  ts := Round((GetTickCount / 1000));
+  { --- Timestamp: GetTickCount returns LONGINT (ticks @ 60Hz since system boot).
+    Overflows VS INTEGER (16-bit) within minutes, so ts must be LONGINT. }
+  ts := GetTickCount DIV 60;
 
-  { --- Output dir: ~/.vwmcp-diag/ --- }
-  { Both Windows and Mac return POSIX-style HOME via env. Fall back to doc dir. }
-  homeEnv := '';
-  { VS has no getenv; we hardcode reasonable defaults. The Python probe handles env. }
-
+  { --- Output dir: same folder as the active doc.
+    GetFPathName returns OS-native separators (\ on Windows, / on Mac), so strip
+    back to whichever appears last. VS AND does not short-circuit (Pascal semantics),
+    so guard Copy() inside the loop body where i > 0 is already known. }
   outDir := docPath;
-  { strip filename to leave directory (POSIX path since VW2019) }
-  VAR i : INTEGER;
-  FOR i := Len(outDir) DOWNTO 1 DO
+  i := Len(outDir);
+  found := FALSE;
+  WHILE (i > 0) AND (NOT found) DO
   BEGIN
-    IF Copy(outDir, i, 1) = '/' THEN
-    BEGIN
-      outDir := Copy(outDir, 1, i);
-      i := 0;
-    END;
+    ch := Copy(outDir, i, 1);
+    IF (ch = '/') OR (ch = '\') THEN
+      found := TRUE
+    ELSE
+      i := i - 1;
   END;
+  IF found THEN
+    outDir := Copy(outDir, 1, i);
 
   outPath := Concat(outDir, 'vs-probe-', Num2Str(0, ts), '.json');
 
@@ -86,22 +125,25 @@ BEGIN
   AppendLn(jsonStr, '');
   AppendLn(jsonStr, Concat('  "probe": "vectorscript",'));
   AppendLn(jsonStr, Concat('  "timestamp": ', Num2Str(0, ts), ','));
-  AppendLn(jsonStr, Concat('  "vw_version": "', vwVersion, '",'));
-  AppendLn(jsonStr, Concat('  "doc_name": "', docName, '",'));
-  AppendLn(jsonStr, Concat('  "doc_path": "', docPath, '",'));
-  AppendLn(jsonStr, Concat('  "has_document": ', BooleanToStr(hasDoc), ','));
-  AppendLn(jsonStr, Concat('  "ifc_scheme": "', ifcScheme, '",'));
-  AppendLn(jsonStr, Concat('  "ifc_scheme_ok": ', BooleanToStr(ifcScheme = 'IFC4X3'), ','));
+  AppendLn(jsonStr, Concat('  "vw_version": "', JsonEscape(vwVersion), '",'));
+  AppendLn(jsonStr, Concat('  "doc_name": "', JsonEscape(docName), '",'));
+  AppendLn(jsonStr, Concat('  "doc_path": "', JsonEscape(docPath), '",'));
+  AppendLn(jsonStr, Concat('  "has_document": ', BoolStr(hasDoc), ','));
+  AppendLn(jsonStr, Concat('  "ifc_scheme": "', JsonEscape(ifcScheme), '",'));
+  AppendLn(jsonStr, Concat('  "ifc_scheme_ok": ', BoolStr(ifcOk), ','));
   AppendLn(jsonStr, Concat('  "layer_count": ', Num2Str(0, layerCount), ','));
   AppendLn(jsonStr, Concat('  "class_count": ', Num2Str(0, classCount)));
   AppendLn(jsonStr, '}');
 
-  { --- Write JSON next to the document --- }
-  fileRef := FOpen(outPath, 'w');
-  IF fileRef > 0 THEN
+  { --- Write JSON next to the document.
+    VS file I/O has no handles: Rewrite(path) opens, WriteLn(args) writes to current
+    file, Close(path) closes. GetLastFileErr returns 0 on success. }
+  Rewrite(outPath);
+  fileErr := GetLastFileErr;
+  IF fileErr = 0 THEN
   BEGIN
-    WriteLn(fileRef, jsonStr);
-    FClose(fileRef);
+    WriteLn(jsonStr);
+    Close(outPath);
     AlrtDialog(Concat(
       'VectorScript probe OK.', Chr(10),
       'VW: ', vwVersion, Chr(10),
@@ -111,7 +153,7 @@ BEGIN
     ));
   END
   ELSE
-    AlrtDialog(Concat('VectorScript probe ran but COULD NOT WRITE report to: ', outPath));
+    AlrtDialog(Concat('VectorScript probe ran but COULD NOT WRITE report (err ', Num2Str(0, fileErr), '): ', outPath));
 END;
 
 RUN(VWMCPProbe);

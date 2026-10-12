@@ -82,7 +82,7 @@ if report.get("vs_module_loaded"):
 
     def _count_layers():
         n = 0
-        h = vs.FActLayer()
+        h = vs.FLayer()  # first design layer; FActLayer returns first SUB-layer of the active layer
         while h:
             n += 1
             h = vs.NextLayer(h)
