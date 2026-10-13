@@ -100,6 +100,18 @@ Rules that follow from the contract:
 - **Verify with reads.** `vs.Count('ALL')` for object counts, `vs.LNewObj()` for the handle of
   the last created object, `read_records_by_format` for data.
 - Payloads of 200 KB stdout and 250 KB script round-trip fine; Unicode round-trips fine.
+- **Plug-in objects regenerate after the call returns.** `vs.ResetObject` inside a script does
+  not update geometry or derived record fields until the script ends. Mutate in one call, read
+  back in the next.
+- **`vs.LNewObj()` is per call** (null in a fresh call). Find objects again with criteria such as
+  `vs.ForEachObject(cb, "(PON='Lighting Device')")`.
+- **Vectorworks writes stderr fragments for failed `vs.*` calls without raising** (unknown
+  plug-in or menu names, `GetBBox` on an empty plug-in object). Under `transaction=true` that
+  rolls the call back. Validate names first or probe with `transaction=false`.
+- **Menu commands:** `vs.DoMenuTextByName(universal_name, 0)`; names come from
+  `C:\Program Files\Vectorworks 2026\Workspaces\Spotlight.vww` (`_x20` = space,
+  case-insensitive). Only use commands known to run without a dialog.
+- Spotlight recipes (place, edit, swap fixtures; truss; layers; viewports): `docs/spotlight-recipes.md`.
 
 Template:
 
@@ -142,6 +154,7 @@ print(json.dumps(out))
 | `python scripts/capability_bench.py` | One case per capability, pass/fail plus latency. Regenerates `docs/capabilities-matrix.md`. `--slow` adds the 25 s ceiling probe, `--ifc PATH` tries the export, `--read-only` skips mutations. | VW on the scratch doc |
 | `python scripts/gantry_ladder.py` | The nine-step write-safety ladder over raw TCP, liveness check after every step. `--py-mode execute` is the crash control run (restart VW after). | VW on the scratch doc |
 | `python scripts/mcp_smoke.py` | Spawns the release server over stdio and calls the read-only tools. | VW with any doc |
+| `python scripts/vw_run.py file.py` or `--code "..."` | Runs one Python file inside VW through the real server and prints stdout, stderr and the response fields. `--no-tx`, `--label`, `--vectorscript`. | VW with any doc |
 | `cargo test` in `mcp-server/` | `vs_signature` unit tests. | nothing |
 | `python diag/probe_tcp_bridge.py` | Raw `ping` to the plugin, no server. | VW |
 

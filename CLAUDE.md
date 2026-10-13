@@ -18,6 +18,8 @@ recovery. `docs/capabilities-matrix.md` is generated evidence (do not edit by ha
 - `python scripts/capability_bench.py` (full suite + latency; `--slow`, `--ifc PATH`)
 - `python scripts/gantry_ladder.py` (write-safety ladder over raw TCP)
 - `python scripts/mcp_smoke.py` (stdio server, read-only tools)
+- `python scripts/vw_run.py file.py` (run one Python file inside VW and print the result)
+- Spotlight-specific recipes and caveats: `docs/spotlight-recipes.md`
 - `cargo test` in `mcp-server/`
 
 ## Build and deploy

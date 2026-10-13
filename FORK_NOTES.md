@@ -4,6 +4,10 @@
 **Local clone:** `D:\CODE\vectorworks-mcp\`
 **Status: ✅ WRITE-SAFE — run_script mutations verified on VW2026 31.7.0.879357, 2026-10-12 (see the next section).**
 
+## Update 2026-10-12 (night): Spotlight probes (fixtures, truss, layers, viewports)
+
+Explored on the scratch doc with the new `scripts/vw_run.py`; recipes and what-did-not-work in `docs/spotlight-recipes.md`. Verified: place a fixture = `vs.Symbol` + select + `vs.DoMenuTextByName('Convert To Instrument', 0)` (Inst Type, wattage, weight filled from the Light Info Record); edit `Lighting Device` fields with `SetRField` + `ResetObject`; swap fixture type only by recreate-and-copy (five field/flag routes read back unchanged); import symbols from `FUSE FIXURES AND TRUSS - LOCAL.vwx` with `BuildResourceListN` + `ImportResourceToCurrentFile` and place truss symbols end to end; `Straight Truss` PIO resized via `LineLength`; design/sheet layers via `CreateLayer(name, 1|2)`; viewport via `CreateVP` + object variables 1003/1007/1032 + `SetVPLayerVisibility` + `SetVPCropObject` + `UpdateVP`. General caveats found: PIO regeneration is deferred until the call returns; `LNewObj` is per call; VW writes stderr fragments for failed `vs.*` calls (unknown PIO/menu names) which roll back a transactional call; menu universal names live in `Workspaces\Spotlight.vww`.
+
 ## Update 2026-10-12 (evening): capability suite, benchmark, agent docs
 
 **New:** `scripts/capability_bench.py` drives the release server over stdio (the path an agent uses) and runs one case per advertised capability with a scored check, latency samples and edge probes. It refuses mutation cases unless the open document is `gantry-test*.vwx`. Output: `docs/test-runs/bench-<stamp>.json` and the regenerated `docs/capabilities-matrix.md`. `docs/agent-guide.md` is the agent-facing contract (tools, `run_script` semantics, error table, safety rules, known gaps); `CLAUDE.md` points there; the server's MCP `instructions` string now carries the short form of the same rules so any client sees them; the README has a fork-status banner.
