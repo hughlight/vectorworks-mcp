@@ -2,7 +2,8 @@
 
 MCP server + Vectorworks plugin that lets an agent run Python inside a live Vectorworks 2026
 on Windows. Read `docs/agent-guide.md` first: tool contract, `run_script` semantics, caveats,
-recovery. `docs/capabilities-matrix.md` is generated evidence (do not edit by hand).
+recovery. `docs/capabilities-matrix.md` is generated evidence (do not edit by hand). Current handoff:
+`docs/next-steps-2026-10-13.md`.
 
 ## Ground rules
 

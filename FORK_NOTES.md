@@ -1,8 +1,12 @@
-# vectorworks-mcp — Fork Notes (last updated 2026-10-12)
+# vectorworks-mcp — Fork Notes (last updated 2026-10-13)
 
 **Upstream:** `https://github.com/mako-357/vectorworks-mcp` (1 star, first public release 2026-04-24)
 **Local clone:** `D:\CODE\vectorworks-mcp\`
 **Status: ✅ WRITE-SAFE — run_script mutations verified on VW2026 31.7.0.879357, 2026-10-12 (see the next section).**
+
+## Update 2026-10-13: playground open, handoff written
+
+Tom saved a disposable copy of the FUSE dev template as `Z:\TEMPLATES\!!!!!! DEV !!!!!!\gantry-test-playground.vwx` (name passes the `gantry-test*` mutation guard); the bridge read it back: 5251 objects, 38 design layers in FUSE groups, 13 sheet layers, 87 viewports, 15 title blocks, plus the scratch test objects merged in. Decision: the unit of delivery is a tested recipe script in `scripts/recipes/` run through `vw_run.py`; L2 tool promotion only for daily-use recipes with stable arguments. A task catalog is to be built in a separate planning session (plan-to-prompts). Full handoff with the untried probes (hanging positions, Braceworks, accessories, existing viewports) in `docs/next-steps-2026-10-13.md`.
 
 ## Update 2026-10-12 (night): Spotlight probes (fixtures, truss, layers, viewports)
 
