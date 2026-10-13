@@ -1,3 +1,8 @@
+> **Fork status (2026-10-12, Windows, VW2026):** this fork talks TCP on `127.0.0.1:27231`, not a Unix socket, and
+> has more tools than the table below. Start with [`docs/agent-guide.md`](docs/agent-guide.md) (abilities,
+> semantics, caveats), [`docs/capabilities-matrix.md`](docs/capabilities-matrix.md) (generated evidence) and
+> [`FORK_NOTES.md`](FORK_NOTES.md) (history). The original upstream README follows.
+
 # Vectorworks MCP
 
 Claude (or any LLM) から Vectorworks を操作するための [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) サーバー。

@@ -4,6 +4,23 @@
 **Local clone:** `D:\CODE\vectorworks-mcp\`
 **Status: ✅ WRITE-SAFE — run_script mutations verified on VW2026 31.7.0.879357, 2026-10-12 (see the next section).**
 
+## Update 2026-10-12 (evening): capability suite, benchmark, agent docs
+
+**New:** `scripts/capability_bench.py` drives the release server over stdio (the path an agent uses) and runs one case per advertised capability with a scored check, latency samples and edge probes. It refuses mutation cases unless the open document is `gantry-test*.vwx`. Output: `docs/test-runs/bench-<stamp>.json` and the regenerated `docs/capabilities-matrix.md`. `docs/agent-guide.md` is the agent-facing contract (tools, `run_script` semantics, error table, safety rules, known gaps); `CLAUDE.md` points there; the server's MCP `instructions` string now carries the short form of the same rules so any client sees them; the README has a fork-status banner.
+
+**Result on 31.7.0.879357 (record `bench-2026-10-12-203100.json`):** 34/34 scored cases pass, `--slow` and `--ifc` included. Facts the suite established that were not written down before:
+- `create_line` / `create_rect` / `create_circle` (L1) are **not undo steps**: after `create_rect`, Undo removed the previous `run_script` event and the rectangle stayed.
+- Each `run_script` is a fresh interpreter context: a global set in one call is `None` in the next. Python inside VW is 3.9.2.
+- A VectorScript error returns `success:false`, `error_code:1`, empty stderr; VectorScript success also has empty stdout.
+- Stderr-only output (no exception) fails and rolls back; stdout is still returned.
+- 200 KB stdout and a 250 KB script round-trip in about 30 ms; Unicode round-trips.
+- A 27 s script gets the dispatcher timeout text after 25.0 s; the next call succeeds after about 2 s because it queues behind the still-running script. VW stayed alive.
+- `get_drawing_info.layer_count` was 2 with one layer: it counts every top-level member of the drawing header, not only layers.
+- Latency, median through stdio + server + TCP + plugin: native read 4 ms, `run_script` 25 ms (27 ms with the undo event), L2 read 28 ms, `vs_signature` 0.3 ms, 100 objects in one script 38 ms.
+- `export_ifc` still `UNVERIFIED`: `IFC_ExportNoUI` false, no file, on the blank document.
+
+**Fix found by the suite:** `gantry_ladder.vw_main_pid()` relied on PowerShell `MainWindowTitle`, which is empty while the VW window is minimized or hidden, so a run reported "VW PROCESS DIED" on every step although every call succeeded. It now takes the owner of the listening port first and falls back to the window title; the bench falls back further to "any Vectorworks2026.exe exists" and says so.
+
 ## Update 2026-10-12: run_script is write-safe (ScriptContext + undo bracket + SEH guard)
 
 **Tested on:** Vectorworks Spotlight 2026, exe version 31.7.0.879357 (VW2026 Update 7 line), Windows 11 26200. Plugin built from this branch (commit `df84ed8`) against SDK 3100 (`SDKVW(832364)`), toolset v145. Test document: a scratch copy of `D:\CODE\TH_VWX\TEST BLANK FILE.vwx`.

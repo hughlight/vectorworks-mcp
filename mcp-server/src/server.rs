@@ -417,10 +417,23 @@ impl ServerHandler for VwMcpServer {
     fn get_info(&self) -> ServerInfo {
         let mut info = ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
         info.instructions = Some(format!(
-            "Vectorworks MCP Server (target VW short tag: {}). Tools: drawing info, \
-             layer list, basic drawing primitives, and run_script for arbitrary \
-             VectorScript or Python execution with stdout/stderr capture.",
-            self.vw_short
+            "Vectorworks MCP server (VW short tag {}, TCP port {}). Drives a running Vectorworks \
+             with an open document through an in-process plugin; Windows only. \
+             Tools: get_drawing_info, list_layers (native reads); create_line/rect/circle (native writes, \
+             NOT undo steps); run_script (Python 3.9 or VectorScript on the VW main thread); \
+             list_classes, list_record_formats, read_records_by_format, export_ifc (read-only \
+             Python templates); vs_signature (offline vs.* index, use it before an unfamiliar call). \
+             run_script rules: each call is one undo step (transaction=true) and a fresh interpreter, \
+             so globals do not persist; print results to stdout as JSON; any stderr output, \
+             including warnings, fails the call and rolls it back; VectorScript has no stdout capture; \
+             keep scripts under 20 s (25 s dispatcher ceiling, the script keeps running after the \
+             timeout); never open dialogs (they block the main thread); batch mutations in one \
+             script. Errors: error=no_document (-1) open a document; script_crashed (-2) and \
+             engine_poisoned (-3) mean scripting is disabled until Vectorworks restarts, tell the \
+             user to Save As and restart. 'Connection error' means the bridge is not running. \
+             Full guide: docs/agent-guide.md in the repo; evidence: docs/capabilities-matrix.md.",
+            self.vw_short,
+            bridge::port_for(self.vw_short)
         ));
         info
     }
