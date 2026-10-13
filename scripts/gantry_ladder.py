@@ -56,16 +56,28 @@ def rpc(port: int, method: str, params: dict, timeout: float = 40.0) -> dict:
 
 # ---------------------------------------------------------------- process checks
 
-def vw_main_pid() -> int | None:
-    """PID of the Vectorworks2026 process that owns the main window (CEF helpers excluded)."""
-    cmd = ["powershell", "-NoProfile", "-Command",
-           "Get-Process Vectorworks2026 -ErrorAction SilentlyContinue | "
-           "Where-Object MainWindowTitle | Select-Object -First 1 -ExpandProperty Id"]
-    try:
-        out = subprocess.run(cmd, capture_output=True, text=True, timeout=20).stdout.strip()
-        return int(out) if out else None
-    except (subprocess.SubprocessError, ValueError):
-        return None
+def vw_main_pid(port: int = 27231) -> int | None:
+    """PID of the main Vectorworks2026 process (CEF helpers excluded).
+
+    First choice: the process that owns the bridge's listening port, which is
+    the main process by construction. Fallback: the process with a main
+    window title, which is empty while the window is minimized or hidden.
+    """
+    cmds = [
+        f"(Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue | "
+        "Select-Object -First 1).OwningProcess",
+        "Get-Process Vectorworks2026 -ErrorAction SilentlyContinue | "
+        "Where-Object MainWindowTitle | Select-Object -First 1 -ExpandProperty Id",
+    ]
+    for c in cmds:
+        try:
+            out = subprocess.run(["powershell", "-NoProfile", "-Command", c],
+                                 capture_output=True, text=True, timeout=20).stdout.strip()
+            if out and int(out) > 0:
+                return int(out)
+        except (subprocess.SubprocessError, ValueError):
+            pass
+    return None
 
 
 def pid_alive(pid: int) -> bool:
@@ -81,7 +93,7 @@ class Ladder:
         self.port = port
         self.py_mode = py_mode
         self.rows: list[dict] = []
-        self.main_pid = vw_main_pid()
+        self.main_pid = vw_main_pid(port)
         self.engine_poisoned = False
 
     # -- helpers --------------------------------------------------------

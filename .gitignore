@@ -5,3 +5,4 @@ build/
 .DS_Store
 Cargo.lock
 mako-vwx-mcp/
+__pycache__/
